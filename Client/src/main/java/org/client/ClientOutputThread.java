@@ -4,16 +4,20 @@ import lombok.Getter;
 import lombok.Setter;
 import org.share.*;
 import org.share.clienttoserver.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
-import static org.share.HeaderPacket.intToByteArray;
+import static org.share.HeaderPacket.*;
 
 @Getter
 @Setter
 public class ClientOutputThread extends Thread {
+    private static final Logger logger = LoggerFactory.getLogger(ClientOutputThread.class);
+
     Socket socket;
     OutputStream out = null;
     Scanner scanner = new Scanner(System.in);
@@ -30,12 +34,12 @@ public class ClientOutputThread extends Thread {
             out = socket.getOutputStream();
             startChat();
           } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IOException",e);
         } finally {
             try {
                 socket.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("IOException",e);
             }
         }
     }

@@ -13,6 +13,7 @@ import java.util.Map;
 
 import static java.lang.System.out;
 import static org.server.ServerThread.clientMap;
+import static org.share.HeaderPacket.packetToJson;
 
 public class SeverMessageHandler {
     static Map<String, RandomAccessFile> fileMap = new HashMap<>();
@@ -175,9 +176,9 @@ public class SeverMessageHandler {
     }
 
     public static synchronized void exceptionMessage(OutputStream out,String message) throws IOException { //원하는 사람 한명에게만 서버 공지전송
-        ServerExceptionPacket exceptionpacket = new ServerExceptionPacket(message);
-        byte[] exceptionpacketbyte = packetToByte(exceptionpacket);
-        out.write(exceptionpacketbyte);
+        ServerExceptionPacket exceptionPacket = new ServerExceptionPacket(message);
+        byte[] exceptionPacketByte = packetToJson(exceptionPacket).getBytes();
+        out.write(exceptionPacketByte);
         out.flush();
     }
 
@@ -205,16 +206,4 @@ public class SeverMessageHandler {
             e.printStackTrace();
         }
     }
-
-    private static byte[] packetToByte(HeaderPacket sendpacket){ //헤더와 바디를 합쳐서 하나의 바이트배열로 반환
-        byte[] headerbytedata = sendpacket.getHeaderBytes();
-        byte[] bodybytedata = sendpacket.getBodyBytes();
-        byte[] packetbytedata = new byte[headerbytedata.length + bodybytedata.length];
-
-        System.arraycopy(headerbytedata, 0, packetbytedata, 0, headerbytedata.length);
-        System.arraycopy(bodybytedata, 0, packetbytedata, headerbytedata.length, bodybytedata.length);
-        return packetbytedata;
-    }
-
-
 }

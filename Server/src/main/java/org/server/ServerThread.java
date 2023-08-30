@@ -43,12 +43,11 @@ public class ServerThread extends Thread {
             while (true) {
                 byte[] clientbytedata = new byte[MAXBUFFERSIZE];
                 int clientbytelength = in.read(clientbytedata);
-                PacketType clientpackettype = byteToPackettype(clientbytedata); //헤더부분 타입추출
-                int clientpacketlength = byteToBodyLength(clientbytedata);// 헤더부분 길이추출
+                String jsonString = new String(clientbytedata, 0, clientbytelength);
                 boolean disconnectcheck = true;
                 if (clientbytelength >= 0) {
-                    HeaderPacket packet = makeClientPacket(clientbytedata, clientpackettype);
-                    disconnectcheck = packetCastingAndSend(packet, clientpackettype);
+                    HeaderPacket packet = jsonToPacket(jsonString);
+                    disconnectcheck = packetCastingAndSend(packet);
                 }
                 if(!disconnectcheck){
                     break;
@@ -78,7 +77,10 @@ public class ServerThread extends Thread {
         System.out.println("[" + clientName + " Connected]"); //서버에 띄우는 메세지.
     }
 
-    private HeaderPacket makeClientPacket(byte[] bytedata, PacketType clienttype) throws IOException {
+    private HeaderPacket makeClientPacket(byte[] bytedata) throws IOException {
+
+
+
         if (clienttype == CLIENT_MESSAGE) {
             return byteToClientMessagePacket(bytedata);
         } else if (clienttype == CLIENT_CONNECT) {
@@ -94,15 +96,15 @@ public class ServerThread extends Thread {
         } else return null;
     }
 
-    public synchronized boolean packetCastingAndSend(HeaderPacket packet, PacketType clientpackettype) throws IOException {
+    public synchronized boolean packetCastingAndSend(HeaderPacket packet) throws IOException {
         if (packet != null) {
-            if (clientpackettype == PacketType.CLIENT_CONNECT) {
+            if (packet.getPacketType() == PacketType.CLIENT_CONNECT) {
                 ClientConnectPacket connectPacket = (ClientConnectPacket) packet;
                 connectClient(connectPacket);
-            } else if (clientpackettype == PacketType.CLIENT_MESSAGE) {
+            } else if (packet.getPacketType() == PacketType.CLIENT_MESSAGE) {
                 ClientMessagePacket messagePacket = (ClientMessagePacket) packet;
                 sendAllMessage(messagePacket);
-            } else if (clientpackettype == CLIENT_CHANGENAME) {
+            } else if (packet.getPacketType() == CLIENT_CHANGENAME) {
                 ClientChangeNamePacket changeNamePacket = (ClientChangeNamePacket) packet;
                 boolean containsValue = clientMap.containsValue(changeNamePacket.getChangename());
                 if (containsValue) {
@@ -112,17 +114,17 @@ public class ServerThread extends Thread {
                     clientName = changeNamePacket.getChangename();
                     exceptionMessage(out, "Your name has been changed to " + changeNamePacket.getChangename());
                 }
-            } else if (clientpackettype == CLIENT_WHISPERMESSAGE) {
+            } else if (packet.getPacketType() == CLIENT_WHISPERMESSAGE) {
                 ClientWhisperPacket whisperPacket = (ClientWhisperPacket) packet;
                 sendWhisperMessage(whisperPacket, clientName);
             }
-            else if (clientpackettype == CLIENT_FILE) {
+            else if (packet.getPacketType() == CLIENT_FILE) {
                 ClientFilePacket filePacket = (ClientFilePacket) packet;
                 System.out.println("packetCasting chunk :" + filePacket.getChunk().length);
                 sendFile(filePacket, clientName);
                 return true;
             }
-            else if (clientpackettype == PacketType.CLIENT_DISCONNECT) {
+            else if (packet.getPacketType() == PacketType.CLIENT_DISCONNECT) {
                 ClientDisconnectPacket disconnectPacket = (ClientDisconnectPacket) packet;
                 disconnectClient(disconnectPacket);
                 if (disconnectPacket.getName().equals(clientName)) {
