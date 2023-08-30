@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Client/ChatRoom.Client.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Client/ChatRoom.Client.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Server/ChatRoom.Server.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Server/ChatRoom.Server.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Share/ChatRoom.Share.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Share/ChatRoom.Share.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ChatRoom.main.iml" filepath="$PROJECT_DIR$/.idea/modules/ChatRoom.main.iml" />
+    </modules>
+  </component>
+</project>
