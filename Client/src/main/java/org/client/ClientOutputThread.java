@@ -21,10 +21,10 @@ public class ClientOutputThread extends Thread {
     Socket socket;
     OutputStream out = null;
     Scanner scanner = new Scanner(System.in);
-    String clientname;
+    String clientName;
     public ClientOutputThread(Socket socket,String clientname) {
         this.socket = socket;
-        this.clientname = clientname;
+        this.clientName = clientname;
     }
 
 
@@ -55,8 +55,8 @@ public class ClientOutputThread extends Thread {
                 if(message.startsWith("/")){
                     ClientCommand(message);
                 }else{
-                    ClientMessagePacket clientMessagePacket = new ClientMessagePacket(message, clientname);
-                    sendPacketToByte(clientMessagePacket);
+                    ClientMessagePacket clientMessagePacket = new ClientMessagePacket(message, clientName);
+                    sendToJsonString(clientMessagePacket);
                 }
                 if(message.equals("/quit")){
                     break;
@@ -65,18 +65,6 @@ public class ClientOutputThread extends Thread {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-
-    public synchronized void sendPacketToByte(HeaderPacket sendPacket) throws IOException { //원하는 패킷을 주면 바이트로 변환 후 서버에 전송
-        byte[] headerbytedata = sendPacket.getHeaderBytes();
-        byte[] bodybytedata = sendPacket.getBodyBytes();
-        byte[] packetbytedata = new byte[headerbytedata.length + bodybytedata.length];
-
-        System.arraycopy(headerbytedata, 0, packetbytedata, 0, headerbytedata.length);
-        System.arraycopy(bodybytedata, 0, packetbytedata, headerbytedata.length, bodybytedata.length);
-        out.write(packetbytedata);
-        out.flush();
     }
 
     public synchronized void sendFilePacketToByte(File file) {
@@ -92,7 +80,7 @@ public class ClientOutputThread extends Thread {
                 System.arraycopy(chunk, 0, actualChunk, 0, byteRead);
                 System.out.println("actual Chunk : " + actualChunk.length);
                 ClientFilePacket clientFilePacket = new ClientFilePacket(file.getName(),chunknumber,actualChunk,lastChunknumber);
-                sendPacketToByte(clientFilePacket);
+                //sendPacketToByte(clientFilePacket);
                 chunknumber++;
                 this.sleep(10);
             }
@@ -104,23 +92,28 @@ public class ClientOutputThread extends Thread {
         }
     }
 
+    public synchronized void sendToJsonString(HeaderPacket packet) throws IOException {
+        byte[] packetByteData = packetToJson(packet).getBytes();
+        out.write(packetByteData);
+        out.flush();
+    }
 
     public synchronized void ClientCommand(String message) throws IOException {
         if ("/quit".equals(message)) {
-            ClientDisconnectPacket clientDisconnectPacket = new ClientDisconnectPacket(clientname);
-            sendPacketToByte(clientDisconnectPacket);
+            ClientDisconnectPacket clientDisconnectPacket = new ClientDisconnectPacket(clientName);
+            sendToJsonString(clientDisconnectPacket);
         } else if("/namechange".equals(message)){
             System.out.print("Please enter a name to change :");
-            String changename = scanner.nextLine();
-            ClientChangeNamePacket clientChangeNamePacket = new ClientChangeNamePacket(clientname,changename);
-            sendPacketToByte(clientChangeNamePacket);
+            String changeName = scanner.nextLine();
+            ClientChangeNamePacket clientChangeNamePacket = new ClientChangeNamePacket(clientName,changeName);
+            sendToJsonString(clientChangeNamePacket);
         } else if("/w".equals(message)){
             System.out.print("Please enter a name to whisper :");
-            String whispername = scanner.nextLine();
+            String whisperName = scanner.nextLine();
             System.out.print("Please enter a message to whisper :");
-            String whispermessage = scanner.nextLine();
-            ClientWhisperPacket clientWhisperPacket = new ClientWhisperPacket(whispermessage, whispername);
-            sendPacketToByte(clientWhisperPacket);
+            String whisperMessage = scanner.nextLine();
+            ClientWhisperPacket clientWhisperPacket = new ClientWhisperPacket(whisperMessage, whisperName);
+            sendToJsonString(clientWhisperPacket);
         }else if("/f".equals(message)) {
             System.out.print("Please enter a file name to send : ");
             String filepath = scanner.nextLine();

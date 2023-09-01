@@ -48,22 +48,26 @@ public class Client {
         Scanner scanner = new Scanner(System.in);
         ClientConnectPacket connectPacket = null;
         while(true){
-            System.out.print("please enter your name :");
-            String name = scanner.nextLine(); // 중복확인 기능 추가해야함.
-            connectPacket = new ClientConnectPacket(name);
+            try{
+                System.out.print("please enter your name :");
+                String name = scanner.nextLine(); // 중복확인 기능 추가해야함.
+                connectPacket = new ClientConnectPacket(name);
 
-            byte[] packetByteData = packetToJson(connectPacket).getBytes();
-            out.write(packetByteData);
+                byte[] packetByteData = packetToJson(connectPacket).getBytes();
+                out.write(packetByteData);
 
-            byte[] serverByteData = new byte[1024];
-            int serverByteLength = in.read(serverByteData);
-            String serverJsonString = new String(serverByteData, 0, serverByteLength);
-            HeaderPacket serverPacket = jsonToPacket(serverJsonString);
-            if(serverPacket.getPacketType() == PacketType.SERVER_EXCEPTION){
-                ServerExceptionPacket serverExceptionPacket = (ServerExceptionPacket) serverPacket;
-                System.out.println("[SERVER] " + serverExceptionPacket.getMessage());
-            }else{
-               break;
+                byte[] serverByteData = new byte[1024];
+                int serverByteLength = in.read(serverByteData);
+                String serverJsonString = new String(serverByteData, 0, serverByteLength);
+                HeaderPacket serverPacket = jsonToPacket(serverJsonString);
+                if(serverPacket.getPacketType() == PacketType.SERVER_EXCEPTION){
+                    ServerExceptionPacket serverExceptionPacket = (ServerExceptionPacket) serverPacket;
+                    System.out.println("[SERVER] " + serverExceptionPacket.getMessage());
+                }else{
+                    break;
+                }
+            }catch (Exception e) {
+                logger.error("IOException", e);
             }
         }
         return connectPacket.getName();

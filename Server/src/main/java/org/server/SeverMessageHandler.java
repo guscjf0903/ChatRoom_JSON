@@ -1,6 +1,5 @@
 package org.server;
 
-import org.share.HeaderPacket;
 import org.share.clienttoserver.*;
 import org.share.servertoclient.*;
 
@@ -13,15 +12,14 @@ import java.util.Map;
 
 import static java.lang.System.out;
 import static org.server.ServerThread.clientMap;
-import static org.share.HeaderPacket.packetToJson;
+import static org.share.HeaderPacket.*;
 
 public class SeverMessageHandler {
     static Map<String, RandomAccessFile> fileMap = new HashMap<>();
 
     public static void sendAllMessage(ClientMessagePacket messagepacket) throws IOException { //모두에게 전송하는 메세지 (lock 걸어야함)
-        byte[] sendAllbyte = null;
         ServerMessagePacket serversendpacket = new ServerMessagePacket(messagepacket.getMessage(), messagepacket.getName());
-        sendAllbyte = packetToByte(serversendpacket);
+        byte[] sendAllByte = packetToJson(serversendpacket).getBytes();
         try {
             for (Map.Entry<OutputStream, String> entry : clientMap.entrySet()) {
                 String receiverName = entry.getValue();
@@ -30,7 +28,7 @@ public class SeverMessageHandler {
                     continue;
                 }
                 try {
-                    clientStream.write(sendAllbyte);
+                    clientStream.write(sendAllByte);
                     clientStream.flush();
                 } catch (IOException e) {
                     // 클라이언트와의 연결이 끊어진 경우, 해당 클라이언트를 제거합니다.
@@ -44,9 +42,8 @@ public class SeverMessageHandler {
     }
 
     public static void sendWhisperMessage(ClientWhisperPacket whisperPacket, String sendName) throws IOException {
-        byte[] sendAllbyte = null;
         ServerMessagePacket serversendpacket = new ServerMessagePacket(whisperPacket.getMessage(), sendName);
-        sendAllbyte = packetToByte(serversendpacket);
+        byte[] sendAllbyte = packetToJson(serversendpacket).getBytes();
         try {
             for (Map.Entry<OutputStream, String> entry : clientMap.entrySet()) {
                 String receiverName = entry.getValue();
@@ -81,32 +78,10 @@ public class SeverMessageHandler {
         }
     }
 
-    /*public static void sendFileInChunks(ServerFilePacket serverFilePacket, OutputStream out){
-        byte[] headerbytedata = serverFilePacket.getHeaderBytes();
-        byte[] bodybytedata = serverFilePacket.getBodyBytes();
-
-        try {
-            out.write(headerbytedata); // 헤더 전송
-            out.flush();
-
-            // 파일 청크 전송
-            InputStream fileInputStream = new FileInputStream(serverFilePacket.getFile());
-            byte[] chunk = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = fileInputStream.read(chunk)) != -1) {
-                out.write(chunk, 0, bytesRead);
-                out.flush();
-            }
-            fileInputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }*/
-
 
     public static void clientChangeName(ClientChangeNamePacket clientChangeNamePacket) throws IOException {
         ServerNameChangePacket serverNameChangePacket = new ServerNameChangePacket(clientChangeNamePacket.getName(),clientChangeNamePacket.getChangename());
-        byte[] serverNameChangePacketbyte = packetToByte(serverNameChangePacket);
+        byte[] serverNameChangePacketbyte = packetToJson(serverNameChangePacket).getBytes();
         for (Map.Entry<OutputStream,String> entry : clientMap.entrySet()) {
             String receiverName = entry.getValue();
             OutputStream clientStream = entry.getKey();
@@ -122,17 +97,12 @@ public class SeverMessageHandler {
                 clientMap.put(clientStream,clientChangeNamePacket.getChangename());
             }
         }
-
-
-
-
-
     }
 //패킷을 받아서 해쉬맵안에 같은 이름을 가진 밸류를 찾아서 바꾼 이름으로 바꿔줌
 
     public static void sendAllNotify(String message) throws IOException { //서버 공지 (lock 걸어야함)
         ServerNotifyPacket packet = new ServerNotifyPacket(message);
-        byte[] sendNotifybyte = packetToByte(packet);
+        byte[] sendNotifybyte = packetToJson(packet).getBytes();
 
         try {
             for (Map.Entry<OutputStream, String> entry : clientMap.entrySet()) {
@@ -152,9 +122,9 @@ public class SeverMessageHandler {
         }
     }
 
-    public static synchronized void disconnectClient(ClientDisconnectPacket disconnectPacket) throws IOException {
+    public static synchronized void disconnectClient(ClientDisconnectPacket disconnectPacket,String ThreadName) throws IOException {
         ServerDisconnectPacket disconnectpacket = new ServerDisconnectPacket(disconnectPacket.getName());
-        byte[] disconnectpacketbyte = packetToByte(disconnectpacket);
+        byte[] disconnectpacketbyte = packetToJson(disconnectpacket).getBytes();
 
         try {
             for (Map.Entry<OutputStream, String> entry : clientMap.entrySet()) {
@@ -163,9 +133,12 @@ public class SeverMessageHandler {
                 try {
                     clientStream.write(disconnectpacketbyte);
                     clientStream.flush();
+                    if (receiverName.equals(ThreadName)) {
+                        clientMap.remove(out);
+                    }
                 } catch (IOException e) {
                     // 클라이언트와의 연결이 끊어진 경우, 해당 클라이언트를 제거합니다.
-                    //clientMap.remove(clientStream);
+                    clientMap.remove(clientStream);
                     out.println("[" + receiverName + "Disconnected]");
                 }
             }
@@ -185,7 +158,7 @@ public class SeverMessageHandler {
     public static synchronized void sendFile(ClientFilePacket Packet, String clientName) throws IOException {
         byte[] sendAllbyte;
         ServerFilePacket serverFilePacket = new ServerFilePacket(clientName,Packet.getFilename(),Packet.getChunknumber(),Packet.getChunk(), Packet.getLastChunknumber());
-        sendAllbyte = packetToByte(serverFilePacket);
+        //sendAllbyte = packetToByte(serverFilePacket);
         try {
             for (Map.Entry<OutputStream, String> entry : clientMap.entrySet()) {
                 String receiverName = entry.getValue();
@@ -194,7 +167,7 @@ public class SeverMessageHandler {
                     continue;
                 }
                 try {
-                    clientStream.write(sendAllbyte);
+                    //clientStream.write(sendAllbyte);
                     clientStream.flush();
                 } catch (IOException e) {
                     // 클라이언트와의 연결이 끊어진 경우, 해당 클라이언트를 제거합니다.

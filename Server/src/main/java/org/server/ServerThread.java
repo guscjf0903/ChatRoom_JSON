@@ -10,12 +10,6 @@ import java.util.*;
 import static org.server.SeverMessageHandler.*;
 import static org.share.HeaderPacket.*;
 import static org.share.PacketType.*;
-import static org.share.clienttoserver.ClientChangeNamePacket.*;
-import static org.share.clienttoserver.ClientConnectPacket.*;
-import static org.share.clienttoserver.ClientDisconnectPacket.*;
-import static org.share.clienttoserver.ClientFilePacket.*;
-import static org.share.clienttoserver.ClientMessagePacket.*;
-import static org.share.clienttoserver.ClientWhisperPacket.*;
 
 public class ServerThread extends Thread {
     static final int MAXBUFFERSIZE = 5000;
@@ -49,7 +43,7 @@ public class ServerThread extends Thread {
                     HeaderPacket packet = jsonToPacket(jsonString);
                     disconnectcheck = packetCastingAndSend(packet);
                 }
-                if(!disconnectcheck){
+                if (!disconnectcheck) {
                     break;
                 }
             }
@@ -77,25 +71,6 @@ public class ServerThread extends Thread {
         System.out.println("[" + clientName + " Connected]"); //서버에 띄우는 메세지.
     }
 
-    private HeaderPacket makeClientPacket(byte[] bytedata) throws IOException {
-
-
-
-        if (clienttype == CLIENT_MESSAGE) {
-            return byteToClientMessagePacket(bytedata);
-        } else if (clienttype == CLIENT_CONNECT) {
-            return byteToClientConnectPacket(bytedata);
-        } else if (clienttype == CLIENT_DISCONNECT) {
-            return byteToClientDisconnectPacket(bytedata);
-        } else if (clienttype == CLIENT_CHANGENAME) {
-            return byteToClientChangeNamePacket(bytedata);
-        } else if (clienttype == CLIENT_WHISPERMESSAGE) {
-            return byteToClientWhisperPacket(bytedata);
-        } else if (clienttype == CLIENT_FILE) {
-            return byteToClientFilePacket(bytedata);
-        } else return null;
-    }
-
     public synchronized boolean packetCastingAndSend(HeaderPacket packet) throws IOException {
         if (packet != null) {
             if (packet.getPacketType() == PacketType.CLIENT_CONNECT) {
@@ -117,20 +92,15 @@ public class ServerThread extends Thread {
             } else if (packet.getPacketType() == CLIENT_WHISPERMESSAGE) {
                 ClientWhisperPacket whisperPacket = (ClientWhisperPacket) packet;
                 sendWhisperMessage(whisperPacket, clientName);
-            }
-            else if (packet.getPacketType() == CLIENT_FILE) {
+            } else if (packet.getPacketType() == CLIENT_FILE) {
                 ClientFilePacket filePacket = (ClientFilePacket) packet;
                 System.out.println("packetCasting chunk :" + filePacket.getChunk().length);
                 sendFile(filePacket, clientName);
                 return true;
-            }
-            else if (packet.getPacketType() == PacketType.CLIENT_DISCONNECT) {
+            } else if (packet.getPacketType() == PacketType.CLIENT_DISCONNECT) {
                 ClientDisconnectPacket disconnectPacket = (ClientDisconnectPacket) packet;
-                disconnectClient(disconnectPacket);
-                if (disconnectPacket.getName().equals(clientName)) {
-                    clientMap.remove(out);
-                    return false;
-                }
+                disconnectClient(disconnectPacket,clientName);
+                return !disconnectPacket.getName().equals(clientName);
             }
         }
         return true;

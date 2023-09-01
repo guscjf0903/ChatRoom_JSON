@@ -9,13 +9,7 @@ import java.util.HashMap;
 
 import org.share.servertoclient.*;
 
-import static org.share.HeaderPacket.*;
 import static org.share.servertoclient.ServerDisconnectPacket.*;
-import static org.share.servertoclient.ServerExceptionPacket.*;
-import static org.share.servertoclient.ServerFilePacket.*;
-import static org.share.servertoclient.ServerMessagePacket.*;
-import static org.share.servertoclient.ServerNameChangePacket.*;
-import static org.share.servertoclient.ServerNotifyPacket.*;
 
 public class ClientInputThread extends Thread {
     static final int MAXBUFFERSIZE = 5000;
@@ -37,12 +31,11 @@ public class ClientInputThread extends Thread {
             while (true) {
                 byte[] serverbytedata = new byte[MAXBUFFERSIZE];
                 int serverbytelength = in.read(serverbytedata);
-                PacketType serverpackettype = byteToPackettype(serverbytedata);//서버 헤더부분 타입추출
-                int serverpacketlength = byteToBodyLength(serverbytedata); //서버 헤더부분 길이추출
+                String jsonString = new String(serverbytedata, 0, serverbytelength);
                 boolean disconnectcheck;
                 if (serverbytelength >= 0) {
-                    HeaderPacket packet = makeServerPacket(serverbytedata, serverpackettype);
-                    disconnectcheck = packetCastingAndPrint(packet, serverpackettype);
+                    HeaderPacket packet = jsonToPacket(jsonString);
+                    disconnectcheck = packetCastingAndPrint(packet);
                     if(!disconnectcheck){
                         break;
                     }
@@ -61,56 +54,38 @@ public class ClientInputThread extends Thread {
         }
     }
 
-    public boolean packetCastingAndPrint(HeaderPacket packet, PacketType packetType) throws IOException {
-        if (packetType == PacketType.SERVER_NOTIFY) {
+    public boolean packetCastingAndPrint(HeaderPacket packet) throws IOException {
+        if (packet.getPacketType() == PacketType.SERVER_NOTIFY) {
             ServerNotifyPacket notifyPacket = (ServerNotifyPacket) packet;
             System.out.println("[SERVER] " + notifyPacket.getMessage()); //서버의 Notify 메세지 출력
             return true;
-        } else if (packetType == PacketType.SERVER_EXCEPTION) {
+        } else if (packet.getPacketType()  == PacketType.SERVER_EXCEPTION) {
             ServerExceptionPacket exceptionPacket = (ServerExceptionPacket) packet;
             System.out.println("[SERVER] " + exceptionPacket.getMessage()); //서버의 Exception 메세지 출력
             return true;
-        } else if (packetType == PacketType.SERVER_MESSAGE) {
+        } else if (packet.getPacketType()  == PacketType.SERVER_MESSAGE) {
             ServerMessagePacket messagePacket = (ServerMessagePacket) packet;
             System.out.println("[" + messagePacket.getName() + "] : " + messagePacket.getMessage());//클라이언트가 보낸 메세지
             return true;
-        } else if (packetType == PacketType.SERVER_DISCONNECT) {
+        } else if (packet.getPacketType()  == PacketType.SERVER_DISCONNECT) {
             ServerDisconnectPacket disconnectPacket = (ServerDisconnectPacket) packet;
-            if (disconnectPacket.getName().equals(clientOutputThread.getClientname())) { //본인이 나가기 된 경우.
+            if (disconnectPacket.getName().equals(clientOutputThread.getClientName())) { //본인이 나가기 된 경우.
                 return false;
             }
             System.out.println("[SERVER] " + disconnectPacket.getName() + " left the server.");
-        } else if(packetType == PacketType.SERVER_CHANGENAME){
+        } else if(packet.getPacketType()  == PacketType.SERVER_CHANGENAME){
             ServerNameChangePacket nameChangePacket = (ServerNameChangePacket) packet;
             System.out.println("[SERVER] " + nameChangePacket.getName() + "->" + nameChangePacket.getChangename());
-            if(clientOutputThread.getClientname().equals(nameChangePacket.getName())){
-                clientOutputThread.setClientname(nameChangePacket.getChangename());
+            if(clientOutputThread.getClientName().equals(nameChangePacket.getName())){
+                clientOutputThread.setClientName(nameChangePacket.getChangename());
             }
             return true;
-        } else if(packetType == PacketType.SERVER_FILE){
+        } else if(packet.getPacketType()  == PacketType.SERVER_FILE){
             ServerFilePacket serverFilePacket = (ServerFilePacket) packet;
             saveFile(serverFilePacket);
             return true;
         }
         return true;
-    }
-
-
-    private HeaderPacket makeServerPacket(byte[] bytedata, PacketType servertype) {
-        if (servertype == PacketType.SERVER_NOTIFY) {
-            return byteToServerNotifyPacket(bytedata);
-        } else if (servertype == PacketType.SERVER_EXCEPTION) {
-            return byteToServerExceptionPacket(bytedata);
-        } else if (servertype == PacketType.SERVER_MESSAGE) {
-            return byteToServerMessagePacket(bytedata);
-        } else if (servertype == PacketType.SERVER_DISCONNECT) {
-            return byteToServerDisconnectPacket(bytedata);
-        } else if(servertype == PacketType.SERVER_CHANGENAME){
-            return byteToServerNameChangePacket(bytedata);
-        } else if(servertype == PacketType.SERVER_FILE){
-            return byteToServerFilePacket(bytedata);
-        }
-        else return null;
     }
 
     public void saveFile(ServerFilePacket packet) throws IOException {
