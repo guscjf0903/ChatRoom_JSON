@@ -2,6 +2,8 @@ package org.server;
 
 import org.share.*;
 import org.share.clienttoserver.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
@@ -12,12 +14,14 @@ import static org.share.HeaderPacket.*;
 import static org.share.PacketType.*;
 
 public class ServerThread extends Thread {
-    static final int MAXBUFFERSIZE = 5000;
+    static final int MAXBUFFERSIZE = 8000;
+    private static final Logger logger = LoggerFactory.getLogger(ServerThread.class);
+
 
     public static Map<OutputStream, String> clientMap = Collections.synchronizedMap(new HashMap<OutputStream, String>());
     public String clientName;
 
-    private Socket socket;
+    private final Socket socket;
     private InputStream in;
     private OutputStream out;
 
@@ -27,7 +31,7 @@ public class ServerThread extends Thread {
             out = socket.getOutputStream(); // 클라에게 보내는 메세지
             in = socket.getInputStream(); //클라에서 오는 메세지
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IOException", e);
         }
     }
 
@@ -35,11 +39,11 @@ public class ServerThread extends Thread {
     public void run() {
         try {
             while (true) {
-                byte[] clientbytedata = new byte[MAXBUFFERSIZE];
-                int clientbytelength = in.read(clientbytedata);
-                String jsonString = new String(clientbytedata, 0, clientbytelength);
+                byte[] clientByteData = new byte[MAXBUFFERSIZE];
+                int clientByteLength = in.read(clientByteData);
+                String jsonString = new String(clientByteData, 0, clientByteLength);
                 boolean disconnectcheck = true;
-                if (clientbytelength >= 0) {
+                if (clientByteLength >= 0) {
                     HeaderPacket packet = jsonToPacket(jsonString);
                     disconnectcheck = packetCastingAndSend(packet);
                 }
@@ -48,13 +52,13 @@ public class ServerThread extends Thread {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IOException", e);
             System.out.println("[" + clientName + "Disconnected]");
         } finally {
             try {
                 socket.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("IOException", e);
             }
         }
     }
@@ -81,13 +85,13 @@ public class ServerThread extends Thread {
                 sendAllMessage(messagePacket);
             } else if (packet.getPacketType() == CLIENT_CHANGENAME) {
                 ClientChangeNamePacket changeNamePacket = (ClientChangeNamePacket) packet;
-                boolean containsValue = clientMap.containsValue(changeNamePacket.getChangename());
+                boolean containsValue = clientMap.containsValue(changeNamePacket.getChangeName());
                 if (containsValue) {
                     exceptionMessage(out, "Duplicate name. Please enter another name");
                 } else {
                     clientChangeName(changeNamePacket);
-                    clientName = changeNamePacket.getChangename();
-                    exceptionMessage(out, "Your name has been changed to " + changeNamePacket.getChangename());
+                    clientName = changeNamePacket.getChangeName();
+                    exceptionMessage(out, "Your name has been changed to " + changeNamePacket.getChangeName());
                 }
             } else if (packet.getPacketType() == CLIENT_WHISPERMESSAGE) {
                 ClientWhisperPacket whisperPacket = (ClientWhisperPacket) packet;
@@ -99,7 +103,7 @@ public class ServerThread extends Thread {
                 return true;
             } else if (packet.getPacketType() == PacketType.CLIENT_DISCONNECT) {
                 ClientDisconnectPacket disconnectPacket = (ClientDisconnectPacket) packet;
-                disconnectClient(disconnectPacket,clientName);
+                disconnectClient(disconnectPacket, clientName);
                 return !disconnectPacket.getName().equals(clientName);
             }
         }

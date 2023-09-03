@@ -11,8 +11,9 @@ import org.share.PacketType;
 @JsonTypeName("CLIENT_DISCONNECT")
 public class ClientDisconnectPacket extends HeaderPacket {
     private final String name;
+
     @JsonCreator
-    public ClientDisconnectPacket(@JsonProperty("name")String name) { //디스커넥트는 message가 필요없음
+    public ClientDisconnectPacket(@JsonProperty("name") String name) { //디스커넥트는 message가 필요없음
         super(PacketType.CLIENT_DISCONNECT);
         this.name = name;
     }

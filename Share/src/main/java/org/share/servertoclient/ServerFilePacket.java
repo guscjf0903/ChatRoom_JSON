@@ -15,8 +15,9 @@ public class ServerFilePacket extends HeaderPacket {
     private final int chunkNumber;
     private final byte[] chunk;
     private final int lastChunkNumber;
+
     @JsonCreator
-    public ServerFilePacket(@JsonProperty("type")String name, String fileName, int chunkNumber, byte[] chunk, int lastChunkNumber) {
+    public ServerFilePacket(@JsonProperty("name") String name, @JsonProperty("fileName") String fileName, @JsonProperty("chunkNumber") int chunkNumber, @JsonProperty("chunk") byte[] chunk, @JsonProperty("lastChunkNumber") int lastChunkNumber) {
         super(PacketType.SERVER_FILE);
         this.name = name;
         this.fileName = fileName;

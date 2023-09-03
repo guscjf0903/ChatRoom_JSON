@@ -7,7 +7,9 @@ import org.share.servertoclient.ServerExceptionPacket;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.Scanner;
+
 import static org.share.HeaderPacket.*;
 
 import org.slf4j.Logger;
@@ -31,14 +33,14 @@ public class Client {
             socket = new Socket("localhost", SERVER_PORT);
             String connectName = duplicateNameCheck(socket);
 
-            ClientOutputThread clientoutputThread = new ClientOutputThread(socket,connectName);
-            ClientInputThread clientinputThread = new ClientInputThread(socket,clientoutputThread);
+            ClientOutputThread clientoutputThread = new ClientOutputThread(socket, connectName);
+            ClientInputThread clientinputThread = new ClientInputThread(socket, clientoutputThread);
 
 
             clientoutputThread.start();
             clientinputThread.start();
         } catch (Exception e) {
-            logger.error("IOException",e);
+            logger.error("IOException", e);
         }
     }
 
@@ -47,26 +49,26 @@ public class Client {
         InputStream in = socket.getInputStream();
         Scanner scanner = new Scanner(System.in);
         ClientConnectPacket connectPacket = null;
-        while(true){
-            try{
+        while (true) {
+            try {
                 System.out.print("please enter your name :");
                 String name = scanner.nextLine(); // 중복확인 기능 추가해야함.
                 connectPacket = new ClientConnectPacket(name);
 
-                byte[] packetByteData = packetToJson(connectPacket).getBytes();
+                byte[] packetByteData = Objects.requireNonNull(packetToJson(connectPacket)).getBytes();
                 out.write(packetByteData);
 
                 byte[] serverByteData = new byte[1024];
                 int serverByteLength = in.read(serverByteData);
                 String serverJsonString = new String(serverByteData, 0, serverByteLength);
                 HeaderPacket serverPacket = jsonToPacket(serverJsonString);
-                if(serverPacket.getPacketType() == PacketType.SERVER_EXCEPTION){
+                if (Objects.requireNonNull(serverPacket).getPacketType() == PacketType.SERVER_EXCEPTION) {
                     ServerExceptionPacket serverExceptionPacket = (ServerExceptionPacket) serverPacket;
                     System.out.println("[SERVER] " + serverExceptionPacket.getMessage());
-                }else{
+                } else {
                     break;
                 }
-            }catch (Exception e) {
+            } catch (Exception e) {
                 logger.error("IOException", e);
             }
         }

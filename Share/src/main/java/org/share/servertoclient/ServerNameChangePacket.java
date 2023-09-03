@@ -10,12 +10,13 @@ import org.share.PacketType;
 @Getter
 @JsonTypeName("SERVER_CHANGENAME")
 public class ServerNameChangePacket extends HeaderPacket {
-    private final String changename;
+    private final String changeName;
     private final String name;
+
     @JsonCreator
-    public ServerNameChangePacket(@JsonProperty("name")String name,@JsonProperty("changename") String changename) {
+    public ServerNameChangePacket(@JsonProperty("name") String name, @JsonProperty("changename") String changeName) {
         super(PacketType.SERVER_CHANGENAME);
         this.name = name;
-        this.changename = changename;
+        this.changeName = changeName;
     }
 }

@@ -12,8 +12,9 @@ import org.share.PacketType;
 public class ClientMessagePacket extends HeaderPacket {
     private final String message;
     private final String name;
+
     @JsonCreator
-    public ClientMessagePacket(@JsonProperty("message") String message,@JsonProperty("name") String name) {
+    public ClientMessagePacket(@JsonProperty("message") String message, @JsonProperty("name") String name) {
         super(PacketType.CLIENT_MESSAGE);
         this.message = message;
         this.name = name;

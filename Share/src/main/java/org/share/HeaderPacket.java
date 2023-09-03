@@ -1,14 +1,12 @@
 package org.share;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.share.clienttoserver.*;
 import org.share.servertoclient.*;
 import org.slf4j.Logger;
@@ -36,21 +34,22 @@ public abstract class HeaderPacket {
     protected PacketType packetType;
     private static final Logger logger = LoggerFactory.getLogger(HeaderPacket.class);
 
-    public static String packetToJson(HeaderPacket packet) throws JsonProcessingException {
-        try{
+    public static String packetToJson(HeaderPacket packet) {
+        try {
             ObjectMapper objectMapper = new ObjectMapper();
             return objectMapper.writeValueAsString(packet);
-        }catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             logger.error("JsonProcessingException", e);
             return null;
         }
     }
+
     public static HeaderPacket jsonToPacket(String json) throws JsonProcessingException {
-        try{
+        try {
             ObjectMapper objectMapper = new ObjectMapper();
             return objectMapper.readValue(json, HeaderPacket.class);
-        }catch (JsonProcessingException e){
-            logger.error("JsonProcessingException",e);
+        } catch (JsonProcessingException e) {
+            logger.error("JsonProcessingException", e);
             return null;
         }
 

@@ -12,6 +12,7 @@ import org.share.PacketType;
 @JsonTypeName("CLIENT_CONNECT")
 public class ClientConnectPacket extends HeaderPacket {
     private final String name;
+
     @JsonCreator
     public ClientConnectPacket(@JsonProperty("name") String name) { //디스커넥트는 message가 필요없음
         super(PacketType.CLIENT_CONNECT);

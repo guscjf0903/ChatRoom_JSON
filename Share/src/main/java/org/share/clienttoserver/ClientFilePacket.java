@@ -13,17 +13,16 @@ import java.io.*;
 @JsonTypeName("CLIENT_FILE")
 public class ClientFilePacket extends HeaderPacket {
     private final String filename;
-    private File file;
     byte[] chunk;
-    int chunknumber;
-    int lastChunknumber;
+    int chunkNumber;
+    int lastChunkNumber;
+
     @JsonCreator
-    public ClientFilePacket(@JsonProperty("filename")String filename,@JsonProperty("chunknumber") int chunknumber, byte[] chunk, int lastChunknumber) throws IOException {
+    public ClientFilePacket(@JsonProperty("filename") String filename, @JsonProperty("chunknumber") int chunknumber, @JsonProperty("chunk") byte[] chunk, @JsonProperty("lastChunknumber") int lastChunkNumber) throws IOException {
         super(PacketType.CLIENT_FILE);
         this.filename = filename;
-        this.chunknumber = chunknumber;
+        this.chunkNumber = chunknumber;
         this.chunk = chunk;
-        this.lastChunknumber = lastChunknumber;
+        this.lastChunkNumber = lastChunkNumber;
     }
-
 }

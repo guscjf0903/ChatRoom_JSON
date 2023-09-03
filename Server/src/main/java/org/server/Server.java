@@ -1,12 +1,15 @@
 package org.server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Server {
     private static final int SERVER_PORT = 8888;
-
+    private static final Logger logger = LoggerFactory.getLogger(Server.class);
     public static void main(String[] args) {
         Server server = new Server();
         server.start();
@@ -26,7 +29,7 @@ public class Server {
                 ServerThread.start();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IOException", e);
         }
     }
 }

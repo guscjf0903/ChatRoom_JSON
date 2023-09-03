@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.Scanner;
 
 import static org.share.HeaderPacket.*;
@@ -22,7 +23,8 @@ public class ClientOutputThread extends Thread {
     OutputStream out = null;
     Scanner scanner = new Scanner(System.in);
     String clientName;
-    public ClientOutputThread(Socket socket,String clientname) {
+
+    public ClientOutputThread(Socket socket, String clientname) {
         this.socket = socket;
         this.clientName = clientname;
     }
@@ -33,32 +35,32 @@ public class ClientOutputThread extends Thread {
         try {
             out = socket.getOutputStream();
             startChat();
-          } catch (IOException e) {
-            logger.error("IOException",e);
+        } catch (IOException e) {
+            logger.error("IOException", e);
         } finally {
             try {
                 socket.close();
             } catch (IOException e) {
-                logger.error("IOException",e);
+                logger.error("IOException", e);
             }
         }
     }
 
-    public void startChat(){
-        try{
-            while(true){
+    public void startChat() {
+        try {
+            while (true) {
                 String message;
                 message = scanner.nextLine();
-                if(message == null){
+                if (message == null) {
                     continue;
                 }
-                if(message.startsWith("/")){
+                if (message.startsWith("/")) {
                     ClientCommand(message);
-                }else{
+                } else {
                     ClientMessagePacket clientMessagePacket = new ClientMessagePacket(message, clientName);
                     sendToJsonString(clientMessagePacket);
                 }
-                if(message.equals("/quit")){
+                if (message.equals("/quit")) {
                     break;
                 }
             }
@@ -68,32 +70,29 @@ public class ClientOutputThread extends Thread {
     }
 
     public synchronized void sendFilePacketToByte(File file) {
-        try{
+        try {
             InputStream fileInputStream = new FileInputStream(file); // 파일로만 구성된 데이터에서 이름을 계속추가
             byte[] chunk = new byte[4096];
             int byteRead;
             int chunknumber = 0;
-            int lastChunknumber = (int) Math.ceil((double) file.length() / 4096) - 1;
+            int lastChunkNumber = (int) Math.ceil((double) file.length() / 4096) - 1;
 
-            while((byteRead = fileInputStream.read(chunk)) != -1){
+            while ((byteRead = fileInputStream.read(chunk)) != -1) {
                 byte[] actualChunk = new byte[byteRead];
                 System.arraycopy(chunk, 0, actualChunk, 0, byteRead);
                 System.out.println("actual Chunk : " + actualChunk.length);
-                ClientFilePacket clientFilePacket = new ClientFilePacket(file.getName(),chunknumber,actualChunk,lastChunknumber);
-                //sendPacketToByte(clientFilePacket);
+                ClientFilePacket clientFilePacket = new ClientFilePacket(file.getName(), chunknumber, actualChunk, lastChunkNumber);
+                sendToJsonString(clientFilePacket);
                 chunknumber++;
-                this.sleep(10);
             }
             fileInputStream.close();
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            logger.error("IOException", e);
         }
     }
 
     public synchronized void sendToJsonString(HeaderPacket packet) throws IOException {
-        byte[] packetByteData = packetToJson(packet).getBytes();
+        byte[] packetByteData = Objects.requireNonNull(packetToJson(packet)).getBytes();
         out.write(packetByteData);
         out.flush();
     }
@@ -102,19 +101,19 @@ public class ClientOutputThread extends Thread {
         if ("/quit".equals(message)) {
             ClientDisconnectPacket clientDisconnectPacket = new ClientDisconnectPacket(clientName);
             sendToJsonString(clientDisconnectPacket);
-        } else if("/namechange".equals(message)){
+        } else if ("/namechange".equals(message)) {
             System.out.print("Please enter a name to change :");
             String changeName = scanner.nextLine();
-            ClientChangeNamePacket clientChangeNamePacket = new ClientChangeNamePacket(clientName,changeName);
+            ClientChangeNamePacket clientChangeNamePacket = new ClientChangeNamePacket(clientName, changeName);
             sendToJsonString(clientChangeNamePacket);
-        } else if("/w".equals(message)){
+        } else if ("/w".equals(message)) {
             System.out.print("Please enter a name to whisper :");
             String whisperName = scanner.nextLine();
             System.out.print("Please enter a message to whisper :");
             String whisperMessage = scanner.nextLine();
             ClientWhisperPacket clientWhisperPacket = new ClientWhisperPacket(whisperMessage, whisperName);
             sendToJsonString(clientWhisperPacket);
-        }else if("/f".equals(message)) {
+        } else if ("/f".equals(message)) {
             System.out.print("Please enter a file name to send : ");
             String filepath = scanner.nextLine();
             File file = new File(filepath);
@@ -123,7 +122,7 @@ public class ClientOutputThread extends Thread {
             } else { //파일이 없을때 예외처리.
                 System.out.println("File does not exist. Please provide a valid file path.");
             }
-        } else{
+        } else {
             System.out.println("Invalid command");
         }
     }
