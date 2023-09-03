@@ -83,11 +83,14 @@ public class ClientOutputThread extends Thread {
                 System.out.println("actual Chunk : " + actualChunk.length);
                 ClientFilePacket clientFilePacket = new ClientFilePacket(file.getName(), chunknumber, actualChunk, lastChunkNumber);
                 sendToJsonString(clientFilePacket);
+                sleep(10);
                 chunknumber++;
             }
             fileInputStream.close();
         } catch (IOException e) {
             logger.error("IOException", e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
